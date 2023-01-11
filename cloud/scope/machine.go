@@ -275,8 +275,12 @@ func (m *MachineScope) InstanceAdditionalDiskSpec() []*compute.AttachedDisk {
 
 // InstanceNetworkInterfaceSpec returns compute network interface spec.
 func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface {
+
+	networkPath := path.Join("projects", "dgc-root-svpc", "global", "networks", m.ClusterGetter.NetworkName())
+	fmt.Printf("#### InstanceNetworkInterfaceSpec networkInterface: %+v\n", networkPath)
+
 	networkInterface := &compute.NetworkInterface{
-		Network: path.Join("projects", "dgc-root-svpc", "global", "networks", m.ClusterGetter.NetworkName()),
+		Network: networkPath,
 	}
 
 	if m.GCPMachine.Spec.PublicIP != nil && *m.GCPMachine.Spec.PublicIP {
@@ -290,7 +294,10 @@ func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface 
 
 	if m.GCPMachine.Spec.Subnet != nil {
 		networkInterface.Subnetwork = path.Join("projects", "dgc-root-svpc", "regions", m.ClusterGetter.Region(), "subnetworks", *m.GCPMachine.Spec.Subnet)
+		fmt.Printf("#### InstanceNetworkInterfaceSpec subnet is set wiith value: %+v\n", networkInterface.Subnetwork)
 	}
+
+	fmt.Printf("#### InstanceNetworkInterfaceSpec result: %T => %#v\n", networkInterface, *networkInterface)
 
 	return networkInterface
 }

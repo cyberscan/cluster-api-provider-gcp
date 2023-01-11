@@ -276,7 +276,7 @@ func (m *MachineScope) InstanceAdditionalDiskSpec() []*compute.AttachedDisk {
 // InstanceNetworkInterfaceSpec returns compute network interface spec.
 func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface {
 	networkInterface := &compute.NetworkInterface{
-		Network: path.Join("projects", m.ClusterGetter.Project(), "global", "networks", m.ClusterGetter.NetworkName()),
+		Network: path.Join("projects", "dgc-root-svpc", "global", "networks", m.ClusterGetter.NetworkName()),
 	}
 
 	if m.GCPMachine.Spec.PublicIP != nil && *m.GCPMachine.Spec.PublicIP {

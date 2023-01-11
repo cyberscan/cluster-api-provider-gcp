@@ -87,6 +87,9 @@ var (
 )
 
 func main() {
+	fmt.Println("Hello crude Kubernetes World")
+	time.Sleep(30 * time.Second)
+
 	initFlags(pflag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()

@@ -23,6 +23,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/go-logr/logr"
 
@@ -276,6 +277,9 @@ func (m *MachineScope) InstanceAdditionalDiskSpec() []*compute.AttachedDisk {
 // InstanceNetworkInterfaceSpec returns compute network interface spec.
 func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface {
 
+	fmt.Println("Waiting 30 seconds for InstanceNetworkInterfaceSpec")
+	time.Sleep(30 * time.Second)
+
 	networkPath := path.Join("projects", "dgc-root-svpc", "global", "networks", m.ClusterGetter.NetworkName())
 	fmt.Printf("#### InstanceNetworkInterfaceSpec networkInterface: %+v\n", networkPath)
 
@@ -298,6 +302,9 @@ func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface 
 	}
 
 	fmt.Printf("#### InstanceNetworkInterfaceSpec result: %T => %#v\n", networkInterface, *networkInterface)
+
+	fmt.Println("Waiting 60 seconds for InstanceNetworkInterfaceSpec")
+	time.Sleep(60 * time.Second)
 
 	return networkInterface
 }

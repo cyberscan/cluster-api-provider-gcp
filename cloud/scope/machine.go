@@ -23,9 +23,7 @@ import (
 	"path"
 	"sort"
 	"strings"
-
 	"github.com/go-logr/logr"
-
 	"github.com/pkg/errors"
 	"golang.org/x/mod/semver"
 	"google.golang.org/api/compute/v1"
@@ -368,6 +366,12 @@ func (m *MachineScope) getSubnetworkPath() string {
 
 // InstanceNetworkInterfaceSpec returns compute network interface spec.
 func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface {
+<<<<<<< HEAD
+=======
+	networkPath := path.Join("projects", "dgc-root-svpc", "global", "networks", m.ClusterGetter.NetworkName())
+	fmt.Printf("#### InstanceNetworkInterfaceSpec networkInterface: %+v\n", networkPath)
+
+>>>>>>> e2dd091e (test dgc-root-svpc)
 	networkInterface := &compute.NetworkInterface{
 		Network: m.getNetworkInterfacePath(),
 	}
@@ -382,9 +386,18 @@ func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface 
 	}
 
 	if m.GCPMachine.Spec.Subnet != nil {
+<<<<<<< HEAD
 		networkInterface.Subnetwork = m.getSubnetworkPath()
 	}
 
+=======
+		networkInterface.Subnetwork = path.Join("projects", "dgc-root-svpc", "regions", m.ClusterGetter.Region(), "subnetworks", *m.GCPMachine.Spec.Subnet)
+		fmt.Printf("#### InstanceNetworkInterfaceSpec subnet is set with value: %+v\n", networkInterface.Subnetwork)
+	}
+
+	fmt.Printf("#### InstanceNetworkInterfaceSpec result: %T => %#v\n", networkInterface, *networkInterface)
+
+>>>>>>> e2dd091e (test dgc-root-svpc)
 	return networkInterface
 }
 

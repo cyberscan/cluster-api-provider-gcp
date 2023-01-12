@@ -375,6 +375,7 @@ func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface 
 	networkInterface := &compute.NetworkInterface{
 		Network: m.getNetworkInterfacePath(),
 	}
+	fmt.Printf("#### InstanceNetworkInterfaceSpec networkInterface: %+v\n", m.getNetworkInterfacePath())
 
 	if m.GCPMachine.Spec.PublicIP != nil && *m.GCPMachine.Spec.PublicIP {
 		networkInterface.AccessConfigs = []*compute.AccessConfig{
@@ -388,6 +389,7 @@ func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface 
 	if m.GCPMachine.Spec.Subnet != nil {
 <<<<<<< HEAD
 		networkInterface.Subnetwork = m.getSubnetworkPath()
+		fmt.Printf("#### InstanceNetworkInterfaceSpec subnet is set: %+v\n", networkInterface.Subnetwork)
 	}
 
 =======

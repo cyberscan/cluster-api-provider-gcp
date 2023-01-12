@@ -330,28 +330,19 @@ func (m *MachineScope) getProjectFromSubnet() *string {
 	return nil
 }
 
-func (m *MachineScope) getProjectFromNetworkName() string {
-	defaultNetworkName := m.ClusterGetter.NetworkName()
-
-	if strings.Contains(defaultNetworkName, "/") {
-		networkNameSlice := strings.Split(defaultNetworkName, "/")
-		if len(networkNameSlice) >= 2 && networkNameSlice[0] == "projects" && len(networkNameSlice[1]) > 0 {
-			return networkNameSlice[1]
-		}
-	}
-
-	return defaultNetworkName
-}
-
 // getNetworkInterfacePath returns the default network path, if the subnet contains the subnet string in the form "my-subnetwork".
 // If the subnet starts with project/my-host-project and the project name is different than my-host-project, the project will be
 // replaced by my-host-project. This is the case, if you need to bind a machine to a Shared VPC in a host project.
 func (m *MachineScope) getNetworkInterfacePath() string {
 	defaultPath := path.Join("projects", m.ClusterGetter.Project(), "global", "networks", m.ClusterGetter.NetworkName())
 
-	project := m.getProjectFromNetworkName()
-	if m.ClusterGetter.Project() != project {
-		defaultPath = m.ClusterGetter.NetworkName()
+	subnetProject := m.getProjectFromSubnet()
+	if subnetProject == nil {
+		return defaultPath
+	}
+
+	if m.ClusterGetter.Project() != *subnetProject {
+		defaultPath = path.Join("projects", *subnetProject, "global", "networks", m.ClusterGetter.NetworkName())
 	}
 
 	return defaultPath

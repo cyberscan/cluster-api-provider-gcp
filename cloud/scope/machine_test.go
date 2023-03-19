@@ -72,9 +72,3 @@ func TestMachineLocalSSDDiskType(t *testing.T) {
 	assert.Equal(t, "NVME", localSSDTest.Interface)
 	assert.Equal(t, int64(375), localSSDTest.InitializeParams.DiskSizeGb)
 }
-
-/* TODO
-func TestMachineDefaultNetwork(t *testing.T) {
-
-}
-*/

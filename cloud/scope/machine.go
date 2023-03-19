@@ -271,33 +271,6 @@ func (m *MachineScope) InstanceAdditionalDiskSpec() []*compute.AttachedDisk {
 	return additionalDisks
 }
 
-/* TODO: this was our attempt to check the functionality - DELETE IT, if the new solution works
-networkPath := path.Join("projects", "dgc-root-svpc", "global", "networks", m.ClusterGetter.NetworkName())
-fmt.Printf("#### InstanceNetworkInterfaceSpec networkInterface: %+v\n", networkPath)
-
-networkInterface := &compute.NetworkInterface{
-	Network: networkPath,
-}
-
-if m.GCPMachine.Spec.PublicIP != nil && *m.GCPMachine.Spec.PublicIP {
-	networkInterface.AccessConfigs = []*compute.AccessConfig{
-		{
-			Type: "ONE_TO_ONE_NAT",
-			Name: "External NAT",
-		},
-	}
-}
-
-if m.GCPMachine.Spec.Subnet != nil {
-	networkInterface.Subnetwork = path.Join("projects", "dgc-root-svpc", "regions", m.ClusterGetter.Region(), "subnetworks", *m.GCPMachine.Spec.Subnet)
-	fmt.Printf("#### InstanceNetworkInterfaceSpec subnet is set wiith value: %+v\n", networkInterface.Subnetwork)
-}
-
-fmt.Printf("#### InstanceNetworkInterfaceSpec result: %T => %#v\n", networkInterface, *networkInterface)
-
-return networkInterface
-*/
-
 // subnetHasSlashes returns true, if the subnet *m.GCPMachine.Spec.Subnet is not nil and
 // has a path like this:
 // projects/my-host-project/regions/europe-west3/subnetworks/my-subnetwork
@@ -314,7 +287,7 @@ func (m *MachineScope) subnetHasSlashes() bool {
 	return false
 }
 
-// getProjectFromSubnet returns
+// getProjectFromSubnet returns the project name, if set in Subnet; nil otherwise
 func (m *MachineScope) getProjectFromSubnet() *string {
 	if m.GCPMachine.Spec.Subnet == nil {
 		return nil
@@ -349,15 +322,17 @@ func (m *MachineScope) getNetworkInterfacePath() string {
 }
 
 // getSubnetworkPath returns the default subnet path if there is no project in the spec subnet path.
-// if the subnet is defined as: projects/my-host-project/regions/europe-west3/subnetworks/my-subnetwork
+// If the subnet is defined by "projects/my-host-project/regions/europe-west3/subnetworks/my-subnetwork"
 // the complete path will be returned.
-// Warning: There is no path checking. You must build the correct path by yourself!
+// Warning: There is no path checking. You have to create the correct path yourself!
 func (m *MachineScope) getSubnetworkPath() string {
 	// we dont check m.GCPMachine.Spec.Subnet != nil
 	defaultPath := path.Join("regions", m.ClusterGetter.Region(), "subnetworks", *m.GCPMachine.Spec.Subnet)
 
 	subnetProject := m.getProjectFromSubnet()
 	if subnetProject != nil {
+		// We can dereference the subnet, because getProjectFromSubnet gets the project from the m.GCPMachine.SSpec.Subnet.
+		// Replace the path with the path specified by m.GCPMachine.Subnet
 		defaultPath = *m.GCPMachine.Spec.Subnet
 	}
 
@@ -366,15 +341,10 @@ func (m *MachineScope) getSubnetworkPath() string {
 
 // InstanceNetworkInterfaceSpec returns compute network interface spec.
 func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface {
-<<<<<<< HEAD
-=======
-	networkPath := path.Join("projects", "dgc-root-svpc", "global", "networks", m.ClusterGetter.NetworkName())
-	fmt.Printf("#### InstanceNetworkInterfaceSpec networkInterface: %+v\n", networkPath)
-
->>>>>>> e2dd091e (test dgc-root-svpc)
 	networkInterface := &compute.NetworkInterface{
 		Network: m.getNetworkInterfacePath(),
 	}
+	// TODO: replace with Debug logger (if available) or remove
 	fmt.Printf("#### InstanceNetworkInterfaceSpec networkInterface: %+v\n", m.getNetworkInterfacePath())
 
 	if m.GCPMachine.Spec.PublicIP != nil && *m.GCPMachine.Spec.PublicIP {
@@ -387,19 +357,11 @@ func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface 
 	}
 
 	if m.GCPMachine.Spec.Subnet != nil {
-<<<<<<< HEAD
 		networkInterface.Subnetwork = m.getSubnetworkPath()
+		// TODO: replace with Debug logger (if available) or remove
 		fmt.Printf("#### InstanceNetworkInterfaceSpec subnet is set: %+v\n", networkInterface.Subnetwork)
 	}
 
-=======
-		networkInterface.Subnetwork = path.Join("projects", "dgc-root-svpc", "regions", m.ClusterGetter.Region(), "subnetworks", *m.GCPMachine.Spec.Subnet)
-		fmt.Printf("#### InstanceNetworkInterfaceSpec subnet is set with value: %+v\n", networkInterface.Subnetwork)
-	}
-
-	fmt.Printf("#### InstanceNetworkInterfaceSpec result: %T => %#v\n", networkInterface, *networkInterface)
-
->>>>>>> e2dd091e (test dgc-root-svpc)
 	return networkInterface
 }
 

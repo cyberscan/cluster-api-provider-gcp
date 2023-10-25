@@ -23,6 +23,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"golang.org/x/mod/semver"
@@ -336,7 +337,72 @@ func (m *MachineScope) getSubnetworkPath() string {
 		defaultPath = *m.GCPMachine.Spec.Subnet
 	}
 
+	// Strip any potentially defined alias IP ranges
+	defaultPath = strings.Split(defaultPath, ",")[0]
+
 	return defaultPath
+}
+
+// getInstanceAliasIpRanges returns alias IP ranges attached to the GCE instance's network interface.
+func (m *MachineScope) getInstanceAliasIpRanges() (subnetSecondaryRanges []*compute.AliasIpRange, err error) {
+	subnetSecondaryRanges = make([]*compute.AliasIpRange, 0)
+
+	// No custom subnet has been specified, so no alias ranges could have been defined
+	if m.GCPMachine.Spec.Subnet == nil {
+		return
+	}
+
+	// A custom subnet has been specified but does not contain a definition for alias ranges
+	// ref: https://cloud.google.com/vpc/docs/configure-alias-ip-ranges#creating_a_vm_with_an_alias_ip_range_in_a_secondary_cidr_range
+	if !strings.Contains(*m.GCPMachine.Spec.Subnet, ",aliases=") {
+		return
+	}
+
+	// A custom subnet with more than one definition of alias ranges has been specified, which is a format we don't
+	// accept - multiple alias ranges need to be specified in one definition, separated by a semicolon (;)
+	if strings.Count(*m.GCPMachine.Spec.Subnet, ",aliases=") > 1 {
+		return nil, fmt.Errorf("invalid subnet spec (contains multiple alias range definitions): '%s'", *m.GCPMachine.Spec.Subnet)
+	}
+
+	// A custom subnet with a definition of alias ranges has been specified, parse subnet string into list of ranges
+	subnetSlice := strings.Split(*m.GCPMachine.Spec.Subnet, ",")
+	for _, s := range subnetSlice {
+		if strings.HasPrefix(s, "aliases=") {
+
+			aliasRangesSlice := strings.Split(strings.TrimPrefix(s, "aliases="), ";")
+			for _, r := range aliasRangesSlice {
+
+				// If one or more alias ranges have been specified but don't conform to the formatting convention of
+				// [name:]cidr, treat that as an error. The `name` field is optional.
+				aliasRangeSlice := strings.Split(r, ":")
+				if len(aliasRangeSlice) > 2 {
+					return nil, fmt.Errorf("invalid IP alias range definition: '%s'", r)
+				}
+
+				aliasRangeName, aliasRangeCidr := "", ""
+				if len(aliasRangeSlice) == 1 {
+					aliasRangeCidr = aliasRangeSlice[0]
+				} else {
+					aliasRangeName = aliasRangeSlice[0]
+					aliasRangeCidr = aliasRangeSlice[1]
+				}
+
+				subnetSecondaryRanges = append(subnetSecondaryRanges, &compute.AliasIpRange{
+					SubnetworkRangeName: aliasRangeName,
+					IpCidrRange:         aliasRangeCidr,
+				})
+			}
+
+			break
+		}
+	}
+
+	// Something went wrong during processing if we arrive here without having a non-zero number of secondary ranges
+	if len(subnetSecondaryRanges) == 0 {
+		return nil, fmt.Errorf("unable to parse alias IP ranges from subnet spec: '%s'", *m.GCPMachine.Spec.Subnet)
+	}
+
+	return
 }
 
 // InstanceNetworkInterfaceSpec returns compute network interface spec.
@@ -360,6 +426,12 @@ func (m *MachineScope) InstanceNetworkInterfaceSpec() *compute.NetworkInterface 
 		networkInterface.Subnetwork = m.getSubnetworkPath()
 		// TODO: replace with Debug logger (if available) or remove
 		fmt.Printf("#### InstanceNetworkInterfaceSpec subnet is set: %+v\n", networkInterface.Subnetwork)
+
+		if aliasIpRanges, err := m.getInstanceAliasIpRanges(); err == nil {
+			networkInterface.AliasIpRanges = aliasIpRanges
+		} else {
+			return nil
+		}
 	}
 
 	return networkInterface
@@ -463,7 +535,11 @@ func (m *MachineScope) InstanceSpec(log logr.Logger) *compute.Instance {
 	instance.Disks = append(instance.Disks, m.InstanceAdditionalDiskSpec()...)
 	instance.Metadata = m.InstanceAdditionalMetadataSpec()
 	instance.ServiceAccounts = append(instance.ServiceAccounts, m.InstanceServiceAccountsSpec())
-	instance.NetworkInterfaces = append(instance.NetworkInterfaces, m.InstanceNetworkInterfaceSpec())
+
+	if instanceNetworkInterfaceSpec := m.InstanceNetworkInterfaceSpec(); instanceNetworkInterfaceSpec != nil {
+		instance.NetworkInterfaces = append(instance.NetworkInterfaces, instanceNetworkInterfaceSpec)
+	}
+
 	return instance
 }
 
